@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>عداد تنازلي – تصميم إبداعي</title>
+<style>
+  :root{
+    --bg1:#0f172a; --bg2:#1e293b;
+    --card:#0b1220; --glow:#22d3ee;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8;
+    --danger:#ef4444; --ok:#22c55e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100svh; color:var(--text);
+    background: radial-gradient(1000px 800px at 80% -10%, #173055 0, transparent 60%),
+                radial-gradient(900px 900px at 0% 110%, #0b213f 0, transparent 60%),
+                linear-gradient(135deg,var(--bg1),var(--bg2));
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap{
+    width:min(940px,100%); display:grid; gap:20px;
+  }
+  .panel{
+    background:linear-gradient(180deg, #0b162a, #0a1426);
+    border:1px solid #1f2a44; border-radius:22px; padding:18px;
+    box-shadow:0 10px 40px #0008, inset 0 0 0 1px #ffffff14;
+    backdrop-filter:saturate(120%) blur(4px);
+  }
+  header h1{
+    margin:0 0 8px; font-size:clamp(20px,3.5vw,28px); color:#c7eeff;
+    letter-spacing:.5px
+  }
+  header p{margin:0; color:var(--muted); font-size:14px}
+
+  /* Controls */
+  .controls{display:grid; gap:14px}
+  .row{display:flex; flex-wrap:wrap; gap:12px; align-items:center}
+  label{font-size:13px; color:#cbd5e1}
+  input[type="number"], input[type="datetime-local"]{
+    background:#0c1730; color:var(--text); border:1px solid #223154;
+    border-radius:12px; padding:10px 12px; width:120px; outline:none;
+  }
+  input[type="datetime-local"]{width:220px}
+  .mode{
+    display:flex; gap:8px; background:#0c1730; padding:6px; border-radius:14px;
+    border:1px solid #223154;
+  }
+  .mode button{
+    flex:1; background:transparent; color:#9fb6d7; border:0; padding:10px 12px;
+    border-radius:10px; cursor:pointer; font-weight:600;
+  }
+  .mode button.active{color:#09111f; background:linear-gradient(180deg,#8eeaff,#4dd9ff)}
+  .btns{display:flex; gap:10px}
+  .btn{
+    background:linear-gradient(180deg,#1fb6ff,#00a3ee);
+    border:0; color:#00101c; font-weight:800; letter-spacing:.3px;
+    padding:12px 16px; border-radius:12px; cursor:pointer; min-width:110px;
+    box-shadow:0 8px 24px #00a3ee44, inset 0 -2px 0 #008ecf;
+    transition:transform .08s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{background:#0f1b33; color:#a9c7ff; box-shadow:none; border:1px solid #24406a}
+  .btn.danger{background:linear-gradient(180deg,#ff6f6f,#ef4444); color:#160b0b}
+
+  /* Timer display */
+  .display{
+    display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center;
+  }
+  .clock{
+    display:flex; justify-content:space-between; gap:14px; width:100%;
+  }
+  .slot{display:grid; gap:8px; text-align:center; flex:1}
+  .label{font-size:12px; color:#a1b7d6; letter-spacing:.4px}
+  .flip{
+    perspective:800px; height:120px; position:relative;
+  }
+  .digit{
+    position:absolute; inset:0; display:grid; place-items:center;
+    font-weight:900; font-variant-numeric:tabular-nums;
+    color:#031023; text-shadow:0 1px 0 #fff7;
+    font-size:72px;
+    border-radius:18px;
+    background:linear-gradient(180deg,#bdf1ff,#74ddff 60%, #5ecdf2 60%, #1295c8);
+    box-shadow:0 10px 26px #0009, inset 0 -4px 0 #0b6fa1;
+    transform-origin:bottom; backface-visibility:hidden;
+  }
+  .digit.back{
+    background:linear-gradient(180deg,#7fdcff,#38bdf8 60%, #2aaee9 60%, #0c79aa);
+    color:#001a29; transform:rotateX(180deg); transform-origin:top;
+  }
+  .flip.animate .front{animation:flipTop .6s ease forwards}
+  .flip.animate .back{animation:flipBottom .6s ease .6s forwards}
+  @keyframes flipTop{to{transform:rotateX(-180deg)}}
+  @keyframes flipBottom{from{transform:rotateX(180deg)} to{transform:rotateX(0)}}
+
+  /* Progress ring */
+  .ring{
+    width:180px; height:180px; position:relative; display:grid; place-items:center;
+  }
+  svg{transform:rotate(-90deg)}
+  .ring .center{
+    position:absolute; text-align:center;
+  }
+  .ring .center .mini{
+    font-size:12px; color:#9db6d8; letter-spacing:.3px
+  }
+  .ring .center .big{
+    font-size:18px; font-weight:800; color:#c8f3ff
+  }
+
+  /* Finish effects */
+  .flash{
+    position:fixed; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(1200px 800px at 50% 50%, #00f0ff55 0, transparent 60%);
+    transition:opacity .4s ease;
+  }
+  .flash.show{opacity:1}
+  canvas#confetti{position:fixed; inset:0; pointer-events:none}
+
+  footer{
+    text-align:center; color:#8aa3c5; font-size:12px; margin-top:2px
+  }
+
+  @media (max-width:700px){
+    .flip{height:96px}
+    .digit{font-size:56px}
+    .ring{width:150px; height:150px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="panel">
+      <h1>⏳ عدّاد تنازلي – تصميم إبداعي</h1>
+      <p>اختر المدة (دقائق/ثواني) أو وقت مستهدف، ثم ابدأ. بإمكانك الإيقاف المؤقت والإعادة. عند الانتهاء تسمع تنبيه وتشوف وميض وكونفيتي 🎉</p>
+    </header>
+
+    <section class="panel controls">
+      <div class="row">
+        <div class="mode" id="mode">
+          <button class="active" data-mode="duration">مدة</button>
+          <button data-mode="datetime">وقت/تاريخ</button>
+        </div>
+
+        <div class="row" id="durationInputs">
+          <label>الدقائق</label>
+          <input type="number" min="0" max="999" value="0" id="min">
+          <label>الثواني</label>
+          <input type="number" min="0" max="59" value="30" id="sec">
+        </div>
+
+        <div class="row" id="datetimeInput" style="display:none">
+          <label>الوقت/التاريخ المستهدف</label>
+          <input type="datetime-local" id="target" />
+        </div>
+      </div>
+
+      <div class="row btns">
+        <button class="btn" id="start">ابدأ</button>
+        <button class="btn secondary" id="pause">إيقاف مؤقت</button>
+        <button class="btn danger" id="reset">إعادة ضبط</button>
+      </div>
+    </section>
+
+    <section class="panel display">
+      <div class="clock" aria-live="polite">
+        <div class="slot">
+          <div class="label">ساعات</div>
+          <div class="flip" id="H">
+            <div class="digit front">00</div>
+            <div class="digit back">00</div>
+          </div>
+        </div>
+        <div class="slot">
+          <div class="label">دقائق</div>
+          <div class="flip" id="M">
+            <div class="digit front">00</div>
+            <div class="digit back">00</div>
+          </div>
+        </div>
+        <div class="slot">
+          <div class="label">ثوانٍ</div>
+          <div class="flip" id="S">
+            <div class="digit front">00</div>
+            <div class="digit back">00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ring">
+        <svg width="180" height="180">
+          <circle cx="90" cy="90" r="80" stroke="#122544" stroke-width="14" fill="none"/>
+          <circle id="arc" cx="90" cy="90" r="80" stroke="url(#grad)" stroke-width="14" stroke-linecap="round" fill="none" stroke-dasharray="502" stroke-dashoffset="502"/>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#38bdf8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="center">
+          <div class="mini">التقدّم</div>
+          <div class="big" id="progress">0%</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>تلميح: مفتاح المسافة يوقّف/يستأنف. | عند الانتهاء سيعمل تنبيه صوتي واهتزاز (إن توفر)</footer>
+  </div>
+
+  <div class="flash" id="flash"></div>
+  <canvas id="confetti"></canvas>
+
+<script>
+(function(){
+  // عناصر
+  const modeBtns = document.querySelectorAll('#mode button');
+  const durationBox = document.getElementById('durationInputs');
+  const datetimeBox = document.getElementById('datetimeInput');
+  const minI = document.getElementById('min');
+  const secI = document.getElementById('sec');
+  const targetI = document.getElementById('target');
+
+  const startBtn = document.getElementById('start');
+  const pauseBtn = document.getElementById('pause');
+  const resetBtn = document.getElementById('reset');
+
+  const H = document.getElementById('H');
+  const M = document.getElementById('M');
+  const S = document.getElementById('S');
+  const arc = document.getElementById('arc');
+  const progressText = document.getElementById('progress');
+  const flash = document.getElementById('flash');
+
+  // حالة
+  let mode = 'duration';      // 'duration' | 'datetime'
+  let totalMs = 0;            // إجمالي المدة
+  let endTs = 0;              // الطابع الزمني للنهاية (عند وضع datetime)
+  let leftMs = 0;
+  let ticking = false;
+  let rafId = 0;
+  let lastTick = 0;
+  let startedTotal = 0;       // للاحتساب النسبي في الحلقة
+  const CIRC = 2 * Math.PI * 80; // 502 تقريبًا
+  arc.setAttribute('stroke-dasharray', CIRC);
+  arc.setAttribute('stroke-dashoffset', CIRC);
+
+  // تبديل الوضع
+  modeBtns.forEach(b=>{
+    b.onclick=()=>{
+      modeBtns.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      mode = b.dataset.mode;
+      if(mode==='duration'){durationBox.style.display='flex'; datetimeBox.style.display='none';}
+      else{durationBox.style.display='none'; datetimeBox.style.display='flex';}
+    }
+  });
+
+  // أدوات عرض الأرقام (Flip)
+  function setFlip(flipEl, val){
+    val = String(val).padStart(2,'0');
+    const front = flipEl.querySelector('.front');
+    const back = flipEl.querySelector('.back');
+    if(front.textContent === val) return;
+    back.textContent = val;
+    flipEl.classList.remove('animate'); // restart
+    void flipEl.offsetWidth;
+    flipEl.classList.add('animate');
+    // عند نهاية الحركة حدّث الواجهة الأمامية
+    setTimeout(()=>{ front.textContent = val; }, 600);
+  }
+
+  // تحويل ميلي ثانية إلى H:M:S
+  function breakdown(ms){
+    ms = Math.max(0, ms);
+    const sTotal = Math.floor(ms/1000);
+    const h = Math.floor(sTotal/3600);
+    const m = Math.floor((sTotal%3600)/60);
+    const s = sTotal%60;
+    return {h,m,s};
+  }
+
+  function updateView(ms){
+    const {h,m,s} = breakdown(ms);
+    setFlip(H, h);
+    setFlip(M, m);
+    setFlip(S, s);
+    // الحلقة
+    const done = startedTotal? (1 - (ms/startedTotal)) : 0;
+    const off = Math.max(0, Math.min(CIRC, (1 - done) * CIRC));
+    arc.setAttribute('stroke-dashoffset', off);
+    progressText.textContent = Math.round(done*100) + '%';
+  }
+
+  // مؤثرات الانتهاء
+  function celebrate(){
+    flash.classList.add('show');
+    setTimeout(()=>flash.classList.remove('show'), 350);
+    beep();
+    if(navigator.vibrate) navigator.vibrate([60,40,60,40,120]);
+
+    // Confetti بسيط
+    const cvs = document.getElementById('confetti');
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width = innerWidth, Hc = cvs.height = innerHeight;
+    const dots = Array.from({length:160},()=>({
+      x: Math.random()*W, y: -20 - Math.random()*Hc,
+      r: 2+Math.random()*4, vy: 2+Math.random()*4,
+      vx: (Math.random()-.5)*1.2,
+      col: `hsl(${Math.random()*360},90%,60%)`
+    }));
+    let t=0;
+    function anim(){
+      ctx.clearRect(0,0,W,Hc);
+      dots.forEach(d=>{
+        d.y += d.vy; d.x += d.vx; d.vx *= 0.99;
+        ctx.fillStyle=d.col; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
+      });
+      t++;
+      if(t<180) requestAnimationFrame(anim);
+      else ctx.clearRect(0,0,W,Hc);
+    }
+    anim();
+  }
+
+  // توليد صوت صفير قصير
+  function beep(){
+    const a = new (window.AudioContext||window.webkitAudioContext)();
+    const o = a.createOscillator(); const g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='triangle'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.001, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.3, a.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+0.35);
+    o.start(); o.stop(a.currentTime+0.36);
+  }
+
+  function start(){
+    if(mode==='duration'){
+      const mins = Math.max(0, parseInt(minI.value||0));
+      const secs = Math.max(0, Math.min(59, parseInt(secI.value||0)));
+      totalMs = (mins*60 + secs) * 1000;
+      endTs = performance.now() + totalMs;
+    }else{
+      const ts = new Date(targetI.value).getTime();
+      if(!ts || ts < Date.now()){ alert('اختر وقت/تاريخ مستقبليًا'); return; }
+      totalMs = ts - Date.now();
+      endTs = performance.now() + totalMs;
+    }
+    startedTotal = totalMs;
+    if(totalMs<=0){updateView(0); return;}
+    ticking = true; lastTick = performance.now();
+    tick();
+  }
+
+  function tick(now=performance.now()){
+    if(!ticking) return;
+    leftMs = Math.max(0, endTs - now);
+    updateView(leftMs);
+    if(leftMs<=0){
+      ticking=false; celebrate();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function pause(){
+    if(!ticking) return;
+    ticking=false; cancelAnimationFrame(rafId);
+    // ضبط النهاية من جديد بناءً على المتبقي
+    endTs = performance.now() + leftMs;
+  }
+
+  function reset(){
+    ticking=false; cancelAnimationFrame(rafId);
+    leftMs=0; startedTotal=0; updateView(0);
+    arc.setAttribute('stroke-dashoffset', CIRC);
+    progressText.textContent='0%';
+  }
+
+  // مفاتيح
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space'){ e.preventDefault(); ticking? pause(): start(); }
+  });
+
+  // أزرار
+  startBtn.onclick = start;
+  pauseBtn.onclick = pause;
+  resetBtn.onclick = reset;
+
+  // عرض ابتدائي
+  updateView(0);
+})();
+</script>
+</body>
+</html>
