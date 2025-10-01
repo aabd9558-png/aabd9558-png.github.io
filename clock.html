@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ساعة عصرية</title>
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #2b5876, #4e4376);
+  animation: bgShift 20s infinite alternate;
+}
+
+@keyframes bgShift {
+  0% { background: linear-gradient(135deg, #2b5876, #4e4376); }
+  50% { background: linear-gradient(135deg, #1d976c, #93f9b9); }
+  100% { background: linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b); }
+}
+
+.clock {
+  text-align: center;
+  color: white;
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 1.6rem;
+  color: #ffeb3b;
+}
+
+.time {
+  font-size: 3rem;
+  letter-spacing: 3px;
+  display: inline-block;
+  background: rgba(0,0,0,0.4);
+  padding: 20px 40px;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+  animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 10px #ffeb3b; }
+  to { box-shadow: 0 0 25px #ff5722; }
+}
+
+.country {
+  margin-top: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.flag {
+  font-size: 1.4rem;
+  margin-left: 6px;
+}
+</style>
+</head>
+<body>
+
+<div class="clock">
+  <h1>⏳ الساعة المباشرة</h1>
+  <div class="time" id="ksa"></div>
+  <div class="country">🇸🇦 السعودية</div>
+  <br>
+  <div class="time" id="germany"></div>
+  <div class="country">🇩🇪 ألمانيا</div>
+</div>
+
+<script>
+function updateClocks() {
+  const now = new Date();
+  const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+
+  // السعودية
+  const ksaTime = now.toLocaleTimeString('ar-SA', { ...options, timeZone: 'Asia/Riyadh' });
+  document.getElementById("ksa").textContent = ksaTime;
+
+  // ألمانيا
+  const germanyTime = now.toLocaleTimeString('de-DE', { ...options, timeZone: 'Europe/Berlin' });
+  document.getElementById("germany").textContent = germanyTime;
+}
+
+updateClocks();
+setInterval(updateClocks, 1000);
+</script>
+
+</body>
+</html>
