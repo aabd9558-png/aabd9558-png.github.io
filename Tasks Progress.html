@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة مهامي</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #ffd369;
+      margin-bottom: 30px;
+    }
+
+    .task-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      width: 80%;
+      max-width: 600px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+      margin-bottom: 30px;
+      transition: 0.3s;
+    }
+
+    .task-section:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .task-section h2 {
+      color: #ffd369;
+      margin-bottom: 15px;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 5px;
+    }
+
+    input[type="text"] {
+      width: 70%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #ffd369;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #ffb703;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+
+    li {
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    li.done {
+      text-decoration: line-through;
+      color: #bbb;
+    }
+
+    .remove {
+      margin-left: 10px;
+      background: #ff6b6b;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .remove:hover {
+      background: #d90429;
+    }
+  </style>
+</head>
+<body>
+  <h1>✨ لوحة مهامي الاحترافية</h1>
+
+  <!-- مهام يومية -->
+  <div class="task-section">
+    <h2>📌 المهام اليومية</h2>
+    <input type="text" id="daily-input" placeholder="أدخل مهمة يومية...">
+    <button onclick="addTask('daily')">➕</button>
+    <ul id="daily-list"></ul>
+  </div>
+
+  <!-- مهام أسبوعية -->
+  <div class="task-section">
+    <h2>📅 المهام الأسبوعية</h2>
+    <input type="text" id="weekly-input" placeholder="أدخل مهمة أسبوعية...">
+    <button onclick="addTask('weekly')">➕</button>
+    <ul id="weekly-list"></ul>
+  </div>
+
+  <script>
+    function addTask(type) {
+      const input = document.getElementById(type + "-input");
+      const list = document.getElementById(type + "-list");
+
+      if (input.value.trim() === "") return;
+
+      const li = document.createElement("li");
+      li.textContent = input.value;
+
+      // عند الضغط عليها يتم شطبها
+      li.onclick = () => li.classList.toggle("done");
+
+      // زر الحذف
+      const removeBtn = document.createElement("span");
+      removeBtn.textContent = "✖";
+      removeBtn.classList.add("remove");
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        li.remove();
+      };
+
+      li.appendChild(removeBtn);
+      list.appendChild(li);
+
+      input.value = "";
+    }
+  </script>
+</body>
+</html>
