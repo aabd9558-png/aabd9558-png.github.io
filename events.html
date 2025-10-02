@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>📅 المناسبات السنوية</title>
+  <style>
+    body{
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: linear-gradient(135deg,#f2f6fb,#e7eef6);
+      color:#2b3440; margin:0; padding:32px; text-align:center;
+    }
+    h1{margin:0 0 14px; color:#34495e}
+    .hint{color:#6b7b8c; font-size:14px; margin-bottom:24px}
+    #events{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; max-width:1000px; margin:0 auto}
+    .card{
+      background:#fff; border:1px solid #e5eef6; border-radius:14px; padding:18px;
+      box-shadow:0 8px 24px rgba(0,0,0,.06);
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .card:hover{transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,.08)}
+    .name{font-weight:800; color:#264b63; margin:0 0 8px}
+    .row{margin:4px 0; color:#0e7aa6; font-weight:600}
+    .tag{display:inline-block; font-size:12px; color:#8a99a8; margin-top:8px}
+    .personal{border-inline-start:4px solid #ff9800; padding-inline-start:14px}
+    .loading{opacity:.6}
+  </style>
+</head>
+<body>
+  <h1>📅 المناسبات السنوية</h1>
+  <div class="hint">تُعرَض التواريخ القادمة تلقائياً (ميلادي + هجري) بمظهر هادئ.</div>
+  <div id="events" class="loading">جاري التحميل…</div>
+
+<script>
+(async function(){
+  const box = document.getElementById('events');
+  const today = new Date();
+
+  // ——— مساعدات ———
+  const dd = n => String(n).padStart(2,'0');
+  const toDMY = (date) => `${dd(date.getDate())}-${dd(date.getMonth()+1)}-${date.getFullYear()}`;
+  const parseDMY = (dmy) => {
+    // "dd-mm-yyyy" -> Date (محلي)
+    const [d,m,y] = dmy.split('-').map(Number);
+    return new Date(y, m-1, d);
+  };
+  const formatAr = (date) => date.toLocaleDateString("ar-EG", { day:"2-digit", month:"2-digit", year:"numeric" });
+
+  async function gToHStr(date){
+    const dmy = toDMY(date); // dd-mm-yyyy
+    try{
+      const r = await fetch(`https://api.aladhan.com/v1/gToH?date=${dmy}`);
+      const j = await r.json();
+      const h = j.data.hijri;
+      return `${h.day} ${h.month.ar} ${h.year}`;
+    }catch{ return "تعذّر الجلب"; }
+  }
+
+  async function hToGDate(hDay, hMonth, hYear){
+    // يرجع Date ميلادي لتاريخ هجري مُعطى
+    const dmy = `${dd(hDay)}-${dd(hMonth)}-${hYear}`;
+    const r = await fetch(`https://api.aladhan.com/v1/hToG?date=${dmy}`);
+    const j = await r.json();
+    // الصيغة تكون "dd-mm-yyyy"
+    return parseDMY(j.data.gregorian.date);
+  }
+
+  async function getCurrentHijriYear(){
+    const r = await fetch(`https://api.aladhan.com/v1/gToH?date=${toDMY(today)}`);
+    const j = await r.json();
+    return parseInt(j.data.hijri.year, 10);
+  }
+
+  // يعطي الموعد القادم لمناسبة هجريّة (يجرّب سنة هجرية حالية + التالية)
+  async function nextIslamicOccur(hDay, hMonth){
+    const hYear = await getCurrentHijriYear();
+    const g1 = await hToGDate(hDay, hMonth, hYear);
+    if (g1 >= stripTime(today)) return g1;
+    const g2 = await hToGDate(hDay, hMonth, hYear + 1);
+    return g2;
+  }
+
+  function stripTime(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  // مناسبة شخصية (ميلادي): رجّع الموعد القادم بالسنة الحالية أو القادمة
+  function nextGregorianMMDD(mm_dd){
+    const [m,d] = mm_dd.split('-').map(Number);
+    let g = new Date(today.getFullYear(), m-1, d);
+    if (stripTime(g) < stripTime(today)) g.setFullYear(g.getFullYear()+1);
+    return g;
+  }
+
+  function cardHTML({name, gStr, hStr, personal}){
+    return `
+      <div class="card ${personal ? 'personal':''}">
+        <div class="name">${name}</div>
+        <div class="row">📆 ميلادي: ${gStr}</div>
+        <div class="row">🕌 هجري: ${hStr}</div>
+        ${personal ? `<div class="tag">مناسبة شخصية</div>` : ``}
+      </div>
+    `;
+  }
+
+  // ——— المناسبات ———
+  // الإسلامية (هجري ثابت): 1 رمضان، 1 شوال (عيد الفطر)، 10 ذو الحجة (عيد الأضحى)، 1 محرم (رأس السنة الهجرية)
+  const islamic = [
+    { name:"🌙 بداية رمضان", hDay:1,  hMonth:9  },
+    { name:"🎊 عيد الفطر",   hDay:1,  hMonth:10 },
+    { name:"🕋 عيد الأضحى",   hDay:10, hMonth:12 },
+    { name:"🎉 رأس السنة الهجرية", hDay:1, hMonth:1 }
+  ];
+
+  // الشخصية (ميلادي يتكرر سنوياً):
+  const personal = [
+    { name:"🎂 عيد ميلاد عبد الرحمن", mmdd:"09-15" }, // 15.09 (حسب طلبك: 15.09.1999 → تتكرر سنوياً)
+    { name:"🎓 ذكرى التخرّج",         mmdd:"11-27" }  // 27.11.2024 → تتكرر سنوياً
+  ];
+
+  try{
+    const cards = [];
+
+    // الإسلامية → احسب الموعد القادم بدقة
+    for (const ev of islamic){
+      const gDate = await nextIslamicOccur(ev.hDay, ev.hMonth);
+      const gStr = formatAr(gDate);
+      const hStr = await gToHStr(gDate); // نمط عربي جميل مثل: "1 رمضان 1446"
+      cards.push(cardHTML({name:ev.name, gStr, hStr, personal:false}));
+    }
+
+    // الشخصية → احسب الموعد القادم سنوياً
+    for (const ev of personal){
+      const gDate = nextGregorianMMDD(ev.mmdd);
+      const gStr = formatAr(gDate);
+      const hStr = await gToHStr(gDate);
+      cards.push(cardHTML({name:ev.name, gStr, hStr, personal:true}));
+    }
+
+    box.classList.remove('loading');
+    box.innerHTML = cards.join('');
+  }catch(e){
+    box.innerHTML = "<div class='card'>تعذّر تحميل التواريخ. تحقق من الاتصال بالإنترنت ثم أعد المحاولة.</div>";
+  }
+})();
+</script>
+</body>
+</html>
